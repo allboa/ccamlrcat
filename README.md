@@ -7,7 +7,7 @@ the name is a placeholder. The plan is in [DESIGN.md](DESIGN.md).
 ```r
 # install.packages("remotes")
 remotes::install_github("allboa/aobview")
-remotes::install_github("<owner>/ccamlrcat")
+remotes::install_github("allboa/ccamlrcat")
 
 library(ccamlrcat)
 library(aobview)
