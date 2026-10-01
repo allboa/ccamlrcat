@@ -1,0 +1,25 @@
+Package: ccamlrcat
+Title: A Catalogue of CCAMLR Spatial Data as Cloud-Ready Recipes
+Version: 0.0.0.9000
+Authors@R:
+    person("Michael", "Sumner", , "mdsumner@gmail.com", role = c("aut", "cre"))
+Description: Lists the public layers of the CCAMLR GIS (gis.ccamlr.org) and
+    neighbouring sources (GEBCO, sea ice) as GDAL data source names, and
+    reads them as 'sf' and 'terra' objects ready to draw with 'aobview'.
+    A harvest script snapshots the CCAMLR layers to GeoParquet and Cloud
+    Optimized GeoTIFF. This is an early prototype; the name is a
+    placeholder.
+License: MIT + file LICENSE
+Imports:
+    utils
+Suggests:
+    aobview,
+    sf,
+    terra,
+    testthat (>= 3.0.0)
+Remotes:
+    allboa/aobview
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0

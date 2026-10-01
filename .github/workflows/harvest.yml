@@ -1,0 +1,71 @@
+name: harvest
+
+# Weekly snapshot of the public CCAMLR GIS layers to GeoParquet and COG,
+# committed to the `snapshots` branch. A layer whose bytes did not change
+# makes no diff in its file, so each file's history is the record of that
+# layer's changes; manifest.csv changes every run (it records the run).
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      check_only:
+        description: "Only probe the sources (link check), do not snapshot"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    container: ghcr.io/osgeo/gdal:ubuntu-full-latest
+    steps:
+      - name: Tools
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git r-base-core
+          ogr2ogr --formats | grep -i parquet
+
+      - uses: actions/checkout@v4
+
+      - name: Harvest
+        run: |
+          if [ "${{ inputs.check_only }}" = "true" ]; then
+            Rscript inst/harvest/harvest.R snapshot --check
+          else
+            Rscript inst/harvest/harvest.R snapshot
+          fi
+
+      - name: Manifest summary
+        if: always()
+        run: |
+          echo '## Harvest manifest' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cut -d, -f1,4,6,8 snapshot/manifest.csv >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit to the snapshots branch
+        if: ${{ !inputs.check_only }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "ccamlrcat harvest"
+          git config user.email "actions@users.noreply.github.com"
+          mv snapshot /tmp/snapshot
+          git fetch origin snapshots || true
+          if git rev-parse --verify origin/snapshots >/dev/null 2>&1; then
+            git checkout -B snapshots origin/snapshots
+          else
+            git checkout --orphan snapshots
+            git rm -rf --quiet .
+          fi
+          cp /tmp/snapshot/* .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes since the last snapshot."
+          else
+            git commit -m "snapshot $(date -u +%Y-%m-%d)"
+            git push origin snapshots
+          fi
